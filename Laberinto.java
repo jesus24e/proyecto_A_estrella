@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Laberinto {
@@ -21,9 +22,10 @@ static final char[][] MAPA = {
     static int player_ypos = -1;
     static int meta_xpos = -1;
     static int meta_ypos = -1;    
-    static final String COLOR_JUGADOR = "\u001B[35m";
+    static final String COLOR_JUGADOR = "\u001B[32m";
     static final String COLOR_OBSTACULO = "\u001B[1;31m";
-    static final String COLOR_META = "\u001B[1;33m";;
+    static final String COLOR_META = "\u001B[1;33m";
+    ArrayList<int[]> movimientos = new ArrayList<>();
 
     void imprimirTablero(boolean validezCasilla){
 
@@ -53,6 +55,8 @@ static final char[][] MAPA = {
                         System.out.print(COLOR_META + META +" \u001B[0m");
                     }else if(MAPA[y][x]=='X'){
                         System.out.print(COLOR_OBSTACULO+ MAPA[y][x] +" \u001B[0m");
+                    }else if(revisarCasillaMovimientos(y, x)){
+                        System.out.print(COLOR_JUGADOR+ MAPA[y][x] +" \u001B[0m"); 
                     }else{
                         System.out.print(MAPA[y][x] + " ");
                     }
@@ -144,6 +148,24 @@ static final char[][] MAPA = {
         return validez;
     }
 
+    void guardarMovimiento(int y,int x){
+        movimientos.add(new int[]{y,x});
+        for(int[] pos: movimientos){
+            System.out.println("fila " + (pos[0]+1) + ", columna " + (pos[1]+1));
+        }
+    }
+
+    boolean revisarCasillaMovimientos(int y, int x){
+
+        for(int[] pos:movimientos){
+            if(y == pos[0] && x == pos[1]){
+                return  true;
+            }
+        }
+
+        return false;
+    }
+
     static int leerEntero(Scanner teclado, String mensaje){
         System.out.print(mensaje);
         while (!teclado.hasNextInt()) {
@@ -163,6 +185,9 @@ static final char[][] MAPA = {
             int inicio_y = leerEntero(teclado, "Fila inicio (y): ");
             int inicio_x = leerEntero(teclado, "Columna inicio (x): ");
             validez = partida.definirInicio(inicio_y, inicio_x);
+            if (validez) {
+                partida.guardarMovimiento(player_ypos, player_xpos);
+            }
         }
 
         validez = false;
@@ -182,6 +207,9 @@ static final char[][] MAPA = {
             direccion = teclado.next();
             validez = partida.moverJugador(direccion);
             partida.imprimirTablero(validez);
+            if (validez) {
+                partida.guardarMovimiento(player_ypos, player_xpos);
+            }
         }
 
         

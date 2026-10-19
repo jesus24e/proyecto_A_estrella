@@ -26,12 +26,7 @@ javac Laberinto.java
 java Laberinto
 ```
 
-El programa pide la fila y columna de inicio y de fin (de 1 a 10) y después el modo:
-
-- `a` → resuelve con A* (movimiento en 4 direcciones, heurística Manhattan) y muestra la ruta, los pasos y el costo total.
-- `m` → mueve al jugador manualmente con `u`, `d`, `l`, `r` (`q` para salir).
-
-El costo de la ruta es la suma de los costos de las celdas a las que se entra; la celda de inicio no se cuenta.
+El programa pide la fila y columna de inicio y de fin (de 1 a 10) y después muestra el camino y los pasos realizados mediante A*
 
 ### Leyenda
 

@@ -28,7 +28,6 @@ public class Laberinto {
     int player_ypos = -1;
     int meta_xpos = -1;
     int meta_ypos = -1;
-    int costo_acumulado = 0;
     ArrayList<int[]> movimientos = new ArrayList<>();
 
     static class Nodo {
@@ -70,7 +69,7 @@ public class Laberinto {
                     System.out.print(COLOR_META + META + " " + COLOR_RESET);
                 }else if(MAPA[y][x]==OBSTACULO){
                     System.out.print(COLOR_OBSTACULO + MAPA[y][x] + " " + COLOR_RESET);
-                }else if(revisarCasillaMovimientos(y, x)){
+                }else if(casillaEnMovimientos(y, x)){
                     System.out.print(COLOR_JUGADOR + MAPA[y][x] + " " + COLOR_RESET);
                 }else{
                     System.out.print(MAPA[y][x] + " ");
@@ -138,14 +137,10 @@ public class Laberinto {
     boolean comprobarValidezCasilla(int y, int x){
         boolean validez = false;
 
-        if (!dentroDelTablero(y, x)) {
-            System.out.println("error, la posicion esta fuera del rango del tablero.");
+        if (!esTransitable(y, x)) {
+            System.out.println("error, la posicion esta fuera del rango del tablero o hay un obstaculo en la casilla seleccionada, elija una casilla distinta.");
         }else{
-            if (MAPA[y][x]!=OBSTACULO) {
                 validez = true;
-            }else{
-                System.out.println("hay un obstaculo en la casilla seleccionada elija una casilla distinta.");
-            }
         }
 
         return validez;
@@ -277,52 +272,11 @@ public class Laberinto {
         }
     }
 
-    boolean moverJugador(String direccion){
-        boolean validez = false;
-        boolean direccion_valida = true;
-
-        int x = player_xpos;
-        int y = player_ypos;
-
-        switch (direccion) {
-            case "u":
-                    x = player_xpos;
-                    y = player_ypos-1;
-                break;
-            case "d":
-                    x = player_xpos;
-                    y = player_ypos+1;
-                break;
-            case "l":
-                    x = player_xpos-1;
-                    y = player_ypos;
-                break;
-            case "r":
-                    x = player_xpos+1;
-                    y = player_ypos;
-                break;
-
-            default:
-                System.out.println("selecciona una direccion valida");
-                direccion_valida = false;
-                break;
-        }
-
-        if(direccion_valida && comprobarValidezCasilla(y, x)){
-            validez = true;
-            player_xpos = x;
-            player_ypos = y;
-            costo_acumulado = costo_acumulado + costo(y, x);
-        }
-
-        return validez;
-    }
-
     void guardarMovimiento(int y,int x){
         movimientos.add(new int[]{y,x});
     }
 
-    boolean revisarCasillaMovimientos(int y, int x){
+    boolean casillaEnMovimientos(int y, int x){
 
         for(int[] pos:movimientos){
             if(y == pos[0] && x == pos[1]){
@@ -331,44 +285,6 @@ public class Laberinto {
         }
 
         return false;
-    }
-
-    boolean enMeta(){
-        boolean llegada = false;
-
-        if (player_ypos == meta_ypos && player_xpos == meta_xpos) {
-            llegada = true;
-        }
-
-        return llegada;
-    }
-
-    void jugarManual(Scanner teclado){
-        boolean validez;
-        boolean salir = false;
-        String direccion;
-
-        imprimirTablero();
-
-        while (!enMeta() && !salir) {
-            System.out.println("elige una direccion para mover al jugador a esa casilla, arriba (u) | abajo (d) | derecha (r) | izquierda (l) | salir (q)");
-            direccion = teclado.next();
-
-            if (direccion.equals("q")) {
-                salir = true;
-            }else{
-                validez = moverJugador(direccion);
-                if (validez) {
-                    guardarMovimiento(player_ypos, player_xpos);
-                    imprimirTablero();
-                    System.out.println("posicion actual y:"+(player_ypos+1)+", x:"+(player_xpos+1)+" | costo acumulado: "+costo_acumulado);
-                }
-            }
-        }
-
-        if (enMeta()) {
-            System.out.println("llegaste a la meta en " + (movimientos.size()-1) + " pasos con costo total " + costo_acumulado);
-        }
     }
 
     static int leerEntero(Scanner teclado, String mensaje){
@@ -385,6 +301,8 @@ public class Laberinto {
         Laberinto partida = new Laberinto();
         Scanner teclado = new Scanner(System.in);
         boolean validez = false;
+
+        partida.imprimirTablero();
 
         while (!validez) {
             int inicio_y = leerEntero(teclado, "Fila inicio (y): ");
@@ -403,18 +321,7 @@ public class Laberinto {
             validez = partida.definirFin(fin_y, fin_x);
         }
 
-        String modo = "";
-
-        while (!modo.equals("a") && !modo.equals("m")) {
-            System.out.println("elige un modo: resolver con A* (a) | mover al jugador manualmente (m)");
-            modo = teclado.next();
-        }
-
-        if (modo.equals("a")) {
-            partida.mostrarSolucion();
-        }else{
-            partida.jugarManual(teclado);
-        }
+        partida.mostrarSolucion();
 
         teclado.close();
     }

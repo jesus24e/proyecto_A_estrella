@@ -72,10 +72,10 @@ Si no existe ninguna ruta entre las dos casillas, lo indica.
 
 | Símbolo | Color | Significado |
 |:---:|:---:|:---|
-| `P` | Verde | Casilla de inicio |
-| `M` | Amarillo | Meta |
+| `P` | Azul | Casilla de inicio |
+| `M` | Morado | Meta |
 | `X` | Rojo | Obstáculo |
-| Carácter de la celda | Verde | Casilla que forma parte de la ruta |
+| Carácter de la celda | Azul | Casilla que forma parte de la ruta |
 
 ## Cómo funciona
 

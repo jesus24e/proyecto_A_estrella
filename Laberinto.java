@@ -3,7 +3,7 @@ import java.util.Scanner;
 
 public class Laberinto {
 
-static final char[][] MAPA = {
+    static final char[][] MAPA = {
         {'.', '.', '4', '.', '2', '.', '.', 'X', '.', '.'},
         {'4', '.', 'X', '.', '3', 'X', '2', '.', '.', 'X'},
         {'X', '.', 'X', '2', '.', '4', '3', 'X', '.', '.'},
@@ -18,144 +18,268 @@ static final char[][] MAPA = {
 
     static final char PLAYER = 'P';
     static final char META = 'M';
-    static int player_xpos = -1;
-    static int player_ypos = -1;
-    static int meta_xpos = -1;
-    static int meta_ypos = -1;    
-    static final String COLOR_JUGADOR = "\u001B[32m";
+    static final char OBSTACULO = 'X';
+    //static final String COLOR_JUGADOR = "\u001B[1;38;5;33m"; //color de el caracter
+    static final String COLOR_JUGADOR = "\u001B[30;48;5;75m"; //color de fondo
     static final String COLOR_OBSTACULO = "\u001B[1;31m";
-    static final String COLOR_META = "\u001B[1;33m";
+    static final String COLOR_META = "\u001B[1;35m";
+    static final String COLOR_RESET = "\u001B[0m";
+
+    int player_xpos = -1;
+    int player_ypos = -1;
+    int meta_xpos = -1;
+    int meta_ypos = -1;
     ArrayList<int[]> movimientos = new ArrayList<>();
 
-    void imprimirTablero(boolean validezCasilla){
+    static class Nodo {
+        int y;
+        int x;
+        int g;
+        int h;
+        int f;
+        Nodo padre;
 
-        if (validezCasilla) {
-            
-            int fila_player = player_ypos+1;
-            int columna_player = player_xpos+1;
-            
-            System.out.println("posicion de inicio y:"+fila_player+", "+" x:"+columna_player );
-            System.out.println();
-            System.out.print("   ");
-            for(int conteo = 1; conteo<=10; conteo++){
-                System.out.print(conteo+" ");
-            }
-            System.out.println();
-            System.out.println("   "+"_".repeat(20));
-            for(int y=0; y < MAPA.length; y++){
-                if (y==9) {
-                    System.out.print(y+1+"|");
-                }else{
-                    System.out.print(y+1+" |");
-                }
-                for(int x = 0; x < MAPA[0].length; x++){
-                    if (y == player_ypos && x == player_xpos) {
-                        System.out.print(COLOR_JUGADOR+PLAYER + " "+"\u001B[0m");
-                    }else if(y == meta_ypos && x == meta_xpos){
-                        System.out.print(COLOR_META + META +" \u001B[0m");
-                    }else if(MAPA[y][x]=='X'){
-                        System.out.print(COLOR_OBSTACULO+ MAPA[y][x] +" \u001B[0m");
-                    }else if(revisarCasillaMovimientos(y, x)){
-                        System.out.print(COLOR_JUGADOR+ MAPA[y][x] +" \u001B[0m"); 
-                    }else{
-                        System.out.print(MAPA[y][x] + " ");
-                    }
-                }
-                System.out.println();
-            }
+        Nodo(int y, int x, int g, int h, Nodo padre){
+            this.y = y;
+            this.x = x;
+            this.g = g; //costo
+            this.h = h; //heuristica
+            this.f = g+h;   //funcion de evaluacion o puntuacion A*
+            this.padre = padre;
         }
     }
 
-    Boolean definirInicio(int inicio_y,int inicio_x){
+    void imprimirTablero(){
+        System.out.println();
+        System.out.print("   ");
+        for(int conteo = 1; conteo<=MAPA[0].length; conteo++){
+            System.out.print(conteo+" ");
+        }
+        System.out.println();
+        System.out.println("   "+"_".repeat(MAPA[0].length*2));
+        for(int y=0; y < MAPA.length; y++){
+            if (y>=9) {
+                System.out.print(y+1+"|");
+            }else{
+                System.out.print(y+1+" |");
+            }
+            for(int x = 0; x < MAPA[0].length; x++){
+                if (y == player_ypos && x == player_xpos) {
+                    System.out.print(COLOR_JUGADOR + PLAYER + " " + COLOR_RESET);
+                }else if(y == meta_ypos && x == meta_xpos){
+                    System.out.print(COLOR_META + META + " " + COLOR_RESET);
+                }else if(MAPA[y][x]==OBSTACULO){
+                    System.out.print(COLOR_OBSTACULO + MAPA[y][x] + " " + COLOR_RESET);
+                }else if(casillaEnMovimientos(y, x)){
+                    System.out.print(COLOR_JUGADOR + MAPA[y][x] + " " + COLOR_RESET);
+                }else{
+                    System.out.print(MAPA[y][x] + " ");
+                }
+            }
+            System.out.println();
+        }
+        System.out.println();
+    }
+
+    boolean definirInicio(int inicio_y,int inicio_x){
         int columna_inicio = inicio_x-1;
         int fila_inicio = inicio_y-1;
         boolean validez = false;
 
-        if (comprobarValidezCasilla(columna_inicio, fila_inicio)) {
+        if (comprobarValidezCasilla(fila_inicio, columna_inicio)) {
             validez = true;
             player_xpos = columna_inicio;
             player_ypos = fila_inicio;
         }
-    
-        return validez;        
+
+        return validez;
     }
-    Boolean definirFin(int fin_y, int fin_x){
+
+    boolean definirFin(int fin_y, int fin_x){
         int columna_fin = fin_x-1;
         int fila_fin = fin_y-1;
         boolean validez = false;
 
-        if (comprobarValidezCasilla(columna_fin, fila_fin)) {
-            validez = true;
-            meta_xpos = columna_fin;
-            meta_ypos = fila_fin;
-        }
-    
-        return validez;           
-    }
-
-    boolean comprobarValidezCasilla(int x, int y){
-        boolean validez = false;
-
-        if (((y<0 || x<0)||(y>MAPA.length-1 || x>MAPA[0].length-1))) {
-                System.out.println("error, la posicion esta fuera del rango del tablero.");
-        }else{
-            if (MAPA[y][x]!='X') {
-                validez = true;
+        if (comprobarValidezCasilla(fila_fin, columna_fin)) {
+            if (fila_fin == player_ypos && columna_fin == player_xpos) {
+                System.out.println("la meta no puede estar en la casilla de inicio, elija una casilla distinta.");
             }else{
-                System.out.println("hay un obstaculo en la casilla seleccionada elija una casilla distinta.");
+                validez = true;
+                meta_xpos = columna_fin;
+                meta_ypos = fila_fin;
             }
         }
 
         return validez;
     }
 
-    boolean moverJugador(String direccion){
-        boolean validez = false;
+    boolean dentroDelTablero(int y, int x){
+        boolean validez = true;
 
-        int x=-1;
-        int y=-1;
-
-        switch (direccion) {
-            case "u":
-                    x = player_xpos;
-                    y = player_ypos-1;
-                break;
-            case "d":
-                    x = player_xpos;
-                    y = player_ypos+1;
-                break;
-            case "l":
-                    x = player_xpos-1;
-                    y = player_ypos;
-                break;
-            case "r":
-                    x = player_xpos+1;
-                    y = player_ypos;
-                break;
-        
-            default:
-                System.out.println("selecciona una direccion valida");
-                break;
+        if ((y<0 || x<0)||(y>MAPA.length-1 || x>MAPA[0].length-1)) {
+            validez = false;
         }
-
-        if(comprobarValidezCasilla(x, y)){
-            validez = true;
-        }
-
-        player_xpos = x;
-        player_ypos = y;
 
         return validez;
     }
 
-    void guardarMovimiento(int y,int x){
-        movimientos.add(new int[]{y,x});
-        for(int[] pos: movimientos){
-            System.out.println("fila " + (pos[0]+1) + ", columna " + (pos[1]+1));
+    boolean esTransitable(int y, int x){
+        boolean validez = false;
+
+        if (dentroDelTablero(y, x)) {
+            if (MAPA[y][x]!=OBSTACULO) {
+                validez = true;
+            }
+        }
+
+        return validez;
+    }
+
+    boolean comprobarValidezCasilla(int y, int x){
+        boolean validez = false;
+
+        if (!esTransitable(y, x)) {
+            System.out.println("error, la posicion esta fuera del rango del tablero o hay un obstaculo en la casilla seleccionada, elija una casilla distinta.");
+        }else{
+                validez = true;
+        }
+
+        return validez;
+    }
+
+    int costo(int y, int x){
+        int valor = 1;
+
+        if (MAPA[y][x]!='.') {
+            valor = Character.getNumericValue(MAPA[y][x]);
+        }
+
+        return valor;
+    }
+
+    int heuristica(int y, int x){
+        int distancia_y = Math.abs(y - meta_ypos);
+        int distancia_x = Math.abs(x - meta_xpos);
+
+        return distancia_y + distancia_x;
+    }
+
+    Nodo buscarNodo(ArrayList<Nodo> lista, int y, int x){
+        Nodo encontrado = null;
+
+        for(Nodo nodo: lista){
+            if (nodo.y == y && nodo.x == x) {
+                encontrado = nodo;
+            }
+        }
+
+        return encontrado;
+    }
+
+    Nodo buscarMenorF(ArrayList<Nodo> lista){
+        Nodo menor = lista.get(0);
+
+        for(Nodo nodo: lista){
+            if (nodo.f < menor.f) {
+                menor = nodo;
+            }
+        }
+
+        return menor;
+    }
+
+    void revisarVecinos(Nodo actual, ArrayList<Nodo> lista_abierta, ArrayList<Nodo> lista_cerrada){
+        int[] vecinos_y = {actual.y-1, actual.y+1, actual.y, actual.y};
+        int[] vecinos_x = {actual.x, actual.x, actual.x-1, actual.x+1};
+
+        for(int i = 0; i < 4; i++){
+            int y = vecinos_y[i];
+            int x = vecinos_x[i];
+
+            if (esTransitable(y, x) && buscarNodo(lista_cerrada, y, x) == null) {
+                int nuevo_g = actual.g + costo(y, x);
+                Nodo vecino = buscarNodo(lista_abierta, y, x);
+
+                if (vecino == null) {
+                    lista_abierta.add(new Nodo(y, x, nuevo_g, heuristica(y, x), actual));
+                }else if(nuevo_g < vecino.g){
+                    vecino.g = nuevo_g;
+                    vecino.f = nuevo_g + vecino.h;
+                    vecino.padre = actual;
+                }
+            }
         }
     }
 
-    boolean revisarCasillaMovimientos(int y, int x){
+    ArrayList<int[]> reconstruirRuta(Nodo nodo_meta){
+        ArrayList<int[]> ruta = new ArrayList<>();
+        Nodo nodo = nodo_meta;
+
+        while (nodo != null) {
+            ruta.add(0, new int[]{nodo.y, nodo.x});
+            nodo = nodo.padre;
+        }
+
+        return ruta;
+    }
+
+    ArrayList<int[]> resolverAEstrella(){
+        ArrayList<Nodo> lista_abierta = new ArrayList<>();
+        ArrayList<Nodo> lista_cerrada = new ArrayList<>();
+        ArrayList<int[]> ruta = new ArrayList<>();
+        boolean encontrado = false;
+
+        lista_abierta.add(new Nodo(player_ypos, player_xpos, 0, heuristica(player_ypos, player_xpos), null));
+
+        while (!lista_abierta.isEmpty() && !encontrado) {
+            Nodo actual = buscarMenorF(lista_abierta);
+            lista_abierta.remove(actual);
+            lista_cerrada.add(actual);
+
+            if (actual.y == meta_ypos && actual.x == meta_xpos) {
+                encontrado = true;
+                ruta = reconstruirRuta(actual);
+            }else{
+                revisarVecinos(actual, lista_abierta, lista_cerrada);
+            }
+        }
+
+        return ruta;
+    }
+
+    void mostrarSolucion(){
+        ArrayList<int[]> ruta = resolverAEstrella();
+
+        if (ruta.isEmpty()) {
+            imprimirTablero();
+            System.out.println("no existe una ruta entre el inicio y la meta.");
+        }else{
+            int costo_total = 0;
+
+            movimientos = ruta;
+            imprimirTablero();
+
+            System.out.println("ruta encontrada con A*:");
+            System.out.println();
+            for(int i = 0; i < ruta.size(); i++){
+                int[] pos = ruta.get(i);
+                String costo = i>0 ? String.valueOf(costo(pos[0], pos[1])):"0";
+                System.out.println("fila " + (pos[0]+1) + ", columna " + (pos[1]+1) + ", costo: " + costo);
+                if (i > 0) {
+                    costo_total = costo_total + costo(pos[0], pos[1]);
+                }
+            }
+            System.out.println();
+            System.out.println("pasos: " + (ruta.size()-1));
+            System.out.println("costo total: " + costo_total);
+        }
+    }
+
+    void guardarMovimiento(int y,int x){
+        movimientos.add(new int[]{y,x});
+    }
+
+    boolean casillaEnMovimientos(int y, int x){
 
         for(int[] pos:movimientos){
             if(y == pos[0] && x == pos[1]){
@@ -181,12 +305,17 @@ static final char[][] MAPA = {
         Scanner teclado = new Scanner(System.in);
         boolean validez = false;
 
+        partida.imprimirTablero();
+
+        System.out.println("Introduce los numeros de fila (y) y columna (x) del inicio y de la meta, del 1 al " + MAPA.length + ".");
+        System.out.println();
+
         while (!validez) {
             int inicio_y = leerEntero(teclado, "Fila inicio (y): ");
             int inicio_x = leerEntero(teclado, "Columna inicio (x): ");
             validez = partida.definirInicio(inicio_y, inicio_x);
             if (validez) {
-                partida.guardarMovimiento(player_ypos, player_xpos);
+                partida.guardarMovimiento(partida.player_ypos, partida.player_xpos);
             }
         }
 
@@ -198,22 +327,8 @@ static final char[][] MAPA = {
             validez = partida.definirFin(fin_y, fin_x);
         }
 
-        partida.imprimirTablero(validez);
+        partida.mostrarSolucion();
 
-        String direccion;
-        
-        while (validez) {
-            System.out.println("elige una direccion para mover al jugador a esa casilla, arriba (u) | abajo (d) | derecha (r) | izquierda (l)");
-            direccion = teclado.next();
-            validez = partida.moverJugador(direccion);
-            partida.imprimirTablero(validez);
-            if (validez) {
-                partida.guardarMovimiento(player_ypos, player_xpos);
-            }
-        }
-
-        
-
-
+        teclado.close();
     }
 }

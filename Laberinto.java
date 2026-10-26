@@ -19,9 +19,10 @@ public class Laberinto {
     static final char PLAYER = 'P';
     static final char META = 'M';
     static final char OBSTACULO = 'X';
-    static final String COLOR_JUGADOR = "\u001B[32m";
+    //static final String COLOR_JUGADOR = "\u001B[1;38;5;33m"; //color de el caracter
+    static final String COLOR_JUGADOR = "\u001B[30;48;5;75m"; //color de fondo
     static final String COLOR_OBSTACULO = "\u001B[1;31m";
-    static final String COLOR_META = "\u001B[1;33m";
+    static final String COLOR_META = "\u001B[1;35m";
     static final String COLOR_RESET = "\u001B[0m";
 
     int player_xpos = -1;
@@ -41,9 +42,9 @@ public class Laberinto {
         Nodo(int y, int x, int g, int h, Nodo padre){
             this.y = y;
             this.x = x;
-            this.g = g;
-            this.h = h;
-            this.f = g+h;
+            this.g = g; //costo
+            this.h = h; //heuristica
+            this.f = g+h;   //funcion de evaluacion o puntuacion A*
             this.padre = padre;
         }
     }
@@ -175,7 +176,6 @@ public class Laberinto {
         return encontrado;
     }
 
-    // buscando modificar para eficiencia no tengo idea como lol
     Nodo buscarMenorF(ArrayList<Nodo> lista){
         Nodo menor = lista.get(0);
 
@@ -260,13 +260,16 @@ public class Laberinto {
             imprimirTablero();
 
             System.out.println("ruta encontrada con A*:");
+            System.out.println();
             for(int i = 0; i < ruta.size(); i++){
                 int[] pos = ruta.get(i);
-                System.out.println("fila " + (pos[0]+1) + ", columna " + (pos[1]+1));
+                String costo = i>0 ? String.valueOf(costo(pos[0], pos[1])):"0";
+                System.out.println("fila " + (pos[0]+1) + ", columna " + (pos[1]+1) + ", costo: " + costo);
                 if (i > 0) {
                     costo_total = costo_total + costo(pos[0], pos[1]);
                 }
             }
+            System.out.println();
             System.out.println("pasos: " + (ruta.size()-1));
             System.out.println("costo total: " + costo_total);
         }
@@ -303,6 +306,9 @@ public class Laberinto {
         boolean validez = false;
 
         partida.imprimirTablero();
+
+        System.out.println("Introduce los numeros de fila (y) y columna (x) del inicio y de la meta, del 1 al " + MAPA.length + ".");
+        System.out.println();
 
         while (!validez) {
             int inicio_y = leerEntero(teclado, "Fila inicio (y): ");

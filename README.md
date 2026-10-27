@@ -33,8 +33,6 @@ El estado inicial y final son asignados por el usuario.
 
 ## Descarga
 
-Con Git:
-
 ```bash
 git clone https://github.com/jesus24e/proyecto_A_estrella.git
 cd proyecto_A_estrella
@@ -45,8 +43,7 @@ cd proyecto_A_estrella
 Desde la carpeta que contiene `Laberinto.java`:
 
 ```bash
-javac Laberinto.java
-java Laberinto
+java Laberinto.java
 ```
 
 El programa muestra el tablero y pide, en este orden:
@@ -95,18 +92,36 @@ Si no existe ninguna ruta entre las dos casillas, lo indica.
   - `padre`: nodo desde el que se llegó, para reconstruir la ruta.
 - **`movimientos`:** lista de casillas que se pintan en el tablero como ruta.
 
-### Flujo general
+### Flujo de la búsqueda con A*
 
 ```mermaid
 flowchart TD
-    A["main"] --> B["imprimirTablero"]
-    B --> C["Leer inicio: leerEntero + definirInicio"]
-    C --> D["Leer meta: leerEntero + definirFin"]
-    D --> E["mostrarSolucion"]
-    E --> F["resolverAEstrella"]
-    F --> G{"¿Hay ruta?"}
-    G -- No --> H["Avisar que no existe ruta"]
-    G -- Sí --> I["imprimirTablero con la ruta, pasos y costo total"]
+    A["resolverAEstrella"] --> B["Crear lista abierta con el nodo inicial<br/>g = 0, h = heurística, padre = null"]
+    B --> C["Crear lista cerrada vacía"]
+    C --> D{"¿La lista abierta<br/>está vacía?"}
+    D -- Sí --> E["Devolver ruta vacía<br/>no existe ruta"]
+    D -- No --> F["buscarMenorF:<br/>elegir el nodo con menor f"]
+    F --> G["Pasarlo de la lista abierta<br/>a la lista cerrada"]
+    G --> H{"¿Es la meta?"}
+    H -- Sí --> I["reconstruirRuta: subir por los padres<br/>e insertar cada casilla al inicio"]
+    I --> J["Devolver la ruta<br/>de inicio a meta"]
+    H -- No --> K
+
+    subgraph V["revisarVecinos"]
+        K["Tomar el siguiente vecino:<br/>arriba, abajo, izquierda, derecha"] --> L{"¿Es transitable y no<br/>está en la lista cerrada?"}
+        L -- No --> P{"¿Quedan vecinos<br/>por revisar?"}
+        L -- Sí --> M["nuevo_g = g del actual<br/>+ costo de la casilla"]
+        M --> N{"¿Ya está en la<br/>lista abierta?"}
+        N -- No --> O["Agregar nodo nuevo<br/>g = nuevo_g, h, padre = actual"]
+        N -- Sí --> Q{"¿nuevo_g es menor<br/>que su g?"}
+        Q -- Sí --> R["Actualizar g, f y padre"]
+        Q -- No --> P
+        O --> P
+        R --> P
+    end
+
+    P -- Sí --> K
+    P -- No --> D
 ```
 
 ### Paso a paso
